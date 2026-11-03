@@ -59,6 +59,9 @@
           </p>
           <div class="hero__actions">
             <a class="btn btn--primary" href="tel:+79656164777">Позвонить</a>
+            <a class="btn btn--ghost" href="#catalog" data-focus-search
+              >Поиск</a
+            >
             <a
               class="btn btn--ghost"
               href="https://vk.ru/radicar"
@@ -229,6 +232,26 @@
             >Открыть магазин</a
           >
         </div>
+
+        <form class="catalog-search" id="catalog-search" role="search">
+          <label class="visually-hidden" for="catalog-query">Поиск по каталогу</label>
+          <input
+            id="catalog-query"
+            class="catalog-search__input"
+            type="search"
+            name="q"
+            placeholder="Aozoom, Orion, H7, линзы…"
+            autocomplete="off"
+            enterkeyhint="search"
+          />
+          <button class="btn btn--primary catalog-search__btn" type="submit">
+            Найти
+          </button>
+        </form>
+
+        <p class="catalog-empty" id="catalog-empty" hidden>
+          Ничего не найдено. Попробуйте другое название или цоколь.
+        </p>
 
         <div id="catalog-grid" class="catalog-grid" aria-live="polite"></div>
       </section>
