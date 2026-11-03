@@ -16,8 +16,8 @@
 
 ## Curation notes
 
-- VK albums required login; deep album browse was blocked.
-- Public VK feed + market + Yandex Maps gallery (~198 photos browsed via gallery UI; first visible XXXL set downloaded and scored).
-- Hero pick: client beam-cutoff wall shot (`work-3`) — matches concept “светотеневая граница”.
-- Works: night beam performance photos from client Yandex gallery (not stock).
-- Promo collages with heavy text overlays demoted from hero.
+- Logged-in VK: wall album `album-77839484_00` has **901** photos (named albums only had 4).
+- Scored first visible batch + selected beam wall, lens before/after, polish, and car fronts with Bi-LED.
+- Hero: `hero-beam.jpg` — cool “after” cutoff on RADICAR aiming wall (CSS crop to lower half).
+- Feature: lens projector before/after. Works: UNI-S, polish, UNI-V exterior.
+- Yandex Maps night beams remain as backups under `y-*.jpg`.
