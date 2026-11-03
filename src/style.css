@@ -358,6 +358,7 @@ p {
   width: min(100% - 2 * var(--pad), var(--max));
   margin-inline: auto;
   padding-block: clamp(4rem, 10vw, 7rem);
+  scroll-margin-top: calc(var(--header-h) + 0.75rem);
 }
 
 .section__head {
