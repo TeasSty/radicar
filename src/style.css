@@ -31,6 +31,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: clip;
   color: var(--bone);
   background:
     radial-gradient(120% 80% at 85% -10%, rgba(225, 6, 0, 0.16), transparent 55%),
@@ -795,6 +796,8 @@ p {
 
   .strip {
     display: flex;
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
