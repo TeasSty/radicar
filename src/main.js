@@ -2,7 +2,7 @@ const year = document.querySelector('#year')
 if (year) year.textContent = String(new Date().getFullYear())
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-const PAGE_SIZE = 15
+const PAGE_SIZE = 12
 
 const formatPrice = (value) =>
   `${new Intl.NumberFormat('ru-RU').format(value)}\u00a0₽`
