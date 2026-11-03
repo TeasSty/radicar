@@ -3,6 +3,7 @@ if (year) year.textContent = String(new Date().getFullYear())
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const CATALOG_PREVIEW = 8
+const CATALOG_STEP = 15
 
 const formatPrice = (value) =>
   `${new Intl.NumberFormat('ru-RU').format(value)}\u00a0₽`
@@ -15,7 +16,7 @@ const normalize = (value) =>
 
 let allProducts = []
 let filteredProducts = []
-let catalogExpanded = false
+let visibleCount = CATALOG_PREVIEW
 let revealObserver = null
 
 const createProductCard = (product) => {
@@ -59,15 +60,26 @@ const updateToggle = () => {
   const toggle = document.querySelector('#catalog-toggle')
   if (!toggle) return
 
-  const needsToggle = filteredProducts.length > CATALOG_PREVIEW
-  toggle.hidden = !needsToggle
-  toggle.setAttribute('aria-expanded', String(catalogExpanded))
+  const shown = Math.min(visibleCount, filteredProducts.length)
+  const remaining = filteredProducts.length - shown
+  const canCollapse = shown > CATALOG_PREVIEW
+  const canLoadMore = remaining > 0
 
-  if (!needsToggle) return
+  toggle.hidden = !canLoadMore && !canCollapse
 
-  toggle.textContent = catalogExpanded
-    ? 'Свернуть'
-    : `Показать все · ${filteredProducts.length}`
+  if (canLoadMore) {
+    const next = Math.min(CATALOG_STEP, remaining)
+    toggle.textContent = `Ещё ${next}`
+    toggle.dataset.mode = 'more'
+    toggle.setAttribute('aria-expanded', 'false')
+    return
+  }
+
+  if (canCollapse) {
+    toggle.textContent = 'Свернуть'
+    toggle.dataset.mode = 'collapse'
+    toggle.setAttribute('aria-expanded', 'true')
+  }
 }
 
 const paintCatalog = () => {
@@ -76,19 +88,11 @@ const paintCatalog = () => {
   const emptyEl = document.querySelector('#catalog-empty')
   if (!grid) return
 
-  const visible =
-    catalogExpanded || filteredProducts.length <= CATALOG_PREVIEW
-      ? filteredProducts
-      : filteredProducts.slice(0, CATALOG_PREVIEW)
+  const shown = Math.min(visibleCount, filteredProducts.length)
+  const visible = filteredProducts.slice(0, shown)
 
   if (countEl) {
-    if (filteredProducts.length === allProducts.length) {
-      countEl.textContent = catalogExpanded
-        ? String(allProducts.length)
-        : `${Math.min(CATALOG_PREVIEW, allProducts.length)} из ${allProducts.length}`
-    } else {
-      countEl.textContent = `${filteredProducts.length} из ${allProducts.length}`
-    }
+    countEl.textContent = `${shown} из ${filteredProducts.length}`
   }
 
   if (emptyEl) emptyEl.hidden = filteredProducts.length > 0
@@ -113,11 +117,11 @@ const filterProducts = (query) => {
   })
 }
 
-const applyFilter = (query, { resetExpand = false } = {}) => {
+const applyFilter = (query) => {
   filteredProducts = filterProducts(query)
-  if (resetExpand) catalogExpanded = false
-  // While searching, show all matches so results aren't hidden
-  if (normalize(query)) catalogExpanded = true
+  visibleCount = normalize(query)
+    ? Math.max(filteredProducts.length, CATALOG_PREVIEW)
+    : CATALOG_PREVIEW
   paintCatalog()
 }
 
@@ -130,7 +134,7 @@ const renderCatalog = async () => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     allProducts = await res.json()
     filteredProducts = allProducts
-    catalogExpanded = false
+    visibleCount = CATALOG_PREVIEW
     paintCatalog()
   } catch (error) {
     grid.innerHTML =
@@ -147,20 +151,24 @@ const setupCatalogSearch = () => {
 
   form.addEventListener('submit', (event) => {
     event.preventDefault()
-    applyFilter(input.value, { resetExpand: true })
+    applyFilter(input.value)
     input.focus()
   })
 
   input.addEventListener('input', () => {
-    applyFilter(input.value, { resetExpand: true })
+    applyFilter(input.value)
   })
 
   toggle?.addEventListener('click', () => {
-    catalogExpanded = !catalogExpanded
-    paintCatalog()
-    if (!catalogExpanded) {
+    if (toggle.dataset.mode === 'collapse') {
+      visibleCount = CATALOG_PREVIEW
+      paintCatalog()
       document.querySelector('#catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
     }
+
+    visibleCount = Math.min(visibleCount + CATALOG_STEP, filteredProducts.length)
+    paintCatalog()
   })
 
   document.querySelectorAll('[data-focus-search]').forEach((el) => {
