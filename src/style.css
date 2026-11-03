@@ -580,14 +580,97 @@ p {
   gap: 1.15rem 0.85rem;
 }
 
-.catalog-more {
-  display: flex;
-  justify-content: center;
-  margin-top: 1.75rem;
+.catalog-pager {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.85rem 0.5rem;
+  margin-top: 2rem;
+  padding-top: 1.35rem;
+  border-top: 1px solid var(--line);
 }
 
-.catalog-more .btn {
-  min-width: 12rem;
+.catalog-pager__pages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.2rem;
+  grid-column: 2;
+}
+
+.catalog-pager__page,
+.catalog-pager__arrow {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    color 180ms var(--ease),
+    opacity 180ms var(--ease);
+}
+
+.catalog-pager__page {
+  position: relative;
+}
+
+.catalog-pager__page::after {
+  content: "";
+  position: absolute;
+  left: 0.55rem;
+  right: 0.55rem;
+  bottom: 0.35rem;
+  height: 1px;
+  background: var(--signal);
+  transform: scaleX(0);
+  transition: transform 200ms var(--ease);
+}
+
+.catalog-pager__page[aria-current='page'] {
+  color: var(--bone);
+}
+
+.catalog-pager__page[aria-current='page']::after {
+  transform: scaleX(1);
+}
+
+.catalog-pager__page:hover,
+.catalog-pager__page:focus-visible,
+.catalog-pager__arrow:hover:not(:disabled),
+.catalog-pager__arrow:focus-visible:not(:disabled) {
+  color: var(--bone);
+}
+
+.catalog-pager__arrow {
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.catalog-pager__arrow:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.catalog-pager__meta {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.12em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .product__link {

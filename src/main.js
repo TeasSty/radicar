@@ -2,8 +2,7 @@ const year = document.querySelector('#year')
 if (year) year.textContent = String(new Date().getFullYear())
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-const CATALOG_PREVIEW = 8
-const CATALOG_STEP = 15
+const PAGE_SIZE = 15
 
 const formatPrice = (value) =>
   `${new Intl.NumberFormat('ru-RU').format(value)}\u00a0₽`
@@ -16,8 +15,10 @@ const normalize = (value) =>
 
 let allProducts = []
 let filteredProducts = []
-let visibleCount = CATALOG_PREVIEW
+let currentPage = 1
 let revealObserver = null
+
+const pageCount = () => Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
 
 const createProductCard = (product) => {
   const article = document.createElement('article')
@@ -56,30 +57,38 @@ const createProductCard = (product) => {
   return article
 }
 
-const updateToggle = () => {
-  const toggle = document.querySelector('#catalog-toggle')
-  if (!toggle) return
+const updatePager = () => {
+  const pager = document.querySelector('#catalog-pager')
+  const pagesEl = document.querySelector('#catalog-pages')
+  const metaEl = document.querySelector('#catalog-pager-meta')
+  const prevBtn = document.querySelector('#catalog-prev')
+  const nextBtn = document.querySelector('#catalog-next')
+  if (!pager || !pagesEl || !metaEl || !prevBtn || !nextBtn) return
 
-  const shown = Math.min(visibleCount, filteredProducts.length)
-  const remaining = filteredProducts.length - shown
-  const canCollapse = shown > CATALOG_PREVIEW
-  const canLoadMore = remaining > 0
+  const total = filteredProducts.length
+  const pages = pageCount()
 
-  toggle.hidden = !canLoadMore && !canCollapse
+  pager.hidden = total <= PAGE_SIZE
+  prevBtn.disabled = currentPage <= 1
+  nextBtn.disabled = currentPage >= pages
 
-  if (canLoadMore) {
-    const next = Math.min(CATALOG_STEP, remaining)
-    toggle.textContent = `Ещё ${next}`
-    toggle.dataset.mode = 'more'
-    toggle.setAttribute('aria-expanded', 'false')
-    return
-  }
+  const start = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
+  const end = Math.min(currentPage * PAGE_SIZE, total)
+  metaEl.textContent = total ? `${start}–${end} · ${total}` : ''
 
-  if (canCollapse) {
-    toggle.textContent = 'Свернуть'
-    toggle.dataset.mode = 'collapse'
-    toggle.setAttribute('aria-expanded', 'true')
-  }
+  pagesEl.replaceChildren(
+    ...Array.from({ length: pages }, (_, index) => {
+      const page = index + 1
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'catalog-pager__page'
+      button.textContent = String(page)
+      button.setAttribute('aria-label', `Страница ${page}`)
+      if (page === currentPage) button.setAttribute('aria-current', 'page')
+      button.addEventListener('click', () => goToPage(page))
+      return button
+    }),
+  )
 }
 
 const paintCatalog = () => {
@@ -88,23 +97,35 @@ const paintCatalog = () => {
   const emptyEl = document.querySelector('#catalog-empty')
   if (!grid) return
 
-  const shown = Math.min(visibleCount, filteredProducts.length)
-  const visible = filteredProducts.slice(0, shown)
+  const pages = pageCount()
+  currentPage = Math.min(Math.max(1, currentPage), pages)
+
+  const start = (currentPage - 1) * PAGE_SIZE
+  const visible = filteredProducts.slice(start, start + PAGE_SIZE)
 
   if (countEl) {
-    countEl.textContent = `${shown} из ${filteredProducts.length}`
+    countEl.textContent = String(filteredProducts.length)
   }
 
   if (emptyEl) emptyEl.hidden = filteredProducts.length > 0
 
   grid.replaceChildren(...visible.map(createProductCard))
-  updateToggle()
+  updatePager()
 
   if (!reduceMotion && revealObserver) {
     grid.querySelectorAll('.product').forEach((el) => {
       el.classList.add('reveal', 'is-visible')
     })
   }
+}
+
+const goToPage = (page) => {
+  currentPage = page
+  paintCatalog()
+  document.querySelector('#catalog')?.scrollIntoView({
+    behavior: reduceMotion ? 'auto' : 'smooth',
+    block: 'start',
+  })
 }
 
 const filterProducts = (query) => {
@@ -119,9 +140,7 @@ const filterProducts = (query) => {
 
 const applyFilter = (query) => {
   filteredProducts = filterProducts(query)
-  visibleCount = normalize(query)
-    ? Math.max(filteredProducts.length, CATALOG_PREVIEW)
-    : CATALOG_PREVIEW
+  currentPage = 1
   paintCatalog()
 }
 
@@ -134,7 +153,7 @@ const renderCatalog = async () => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     allProducts = await res.json()
     filteredProducts = allProducts
-    visibleCount = CATALOG_PREVIEW
+    currentPage = 1
     paintCatalog()
   } catch (error) {
     grid.innerHTML =
@@ -146,7 +165,8 @@ const renderCatalog = async () => {
 const setupCatalogSearch = () => {
   const form = document.querySelector('#catalog-search')
   const input = document.querySelector('#catalog-query')
-  const toggle = document.querySelector('#catalog-toggle')
+  const prevBtn = document.querySelector('#catalog-prev')
+  const nextBtn = document.querySelector('#catalog-next')
   if (!form || !input) return
 
   form.addEventListener('submit', (event) => {
@@ -159,16 +179,12 @@ const setupCatalogSearch = () => {
     applyFilter(input.value)
   })
 
-  toggle?.addEventListener('click', () => {
-    if (toggle.dataset.mode === 'collapse') {
-      visibleCount = CATALOG_PREVIEW
-      paintCatalog()
-      document.querySelector('#catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      return
-    }
+  prevBtn?.addEventListener('click', () => {
+    if (currentPage > 1) goToPage(currentPage - 1)
+  })
 
-    visibleCount = Math.min(visibleCount + CATALOG_STEP, filteredProducts.length)
-    paintCatalog()
+  nextBtn?.addEventListener('click', () => {
+    if (currentPage < pageCount()) goToPage(currentPage + 1)
   })
 
   document.querySelectorAll('[data-focus-search]').forEach((el) => {

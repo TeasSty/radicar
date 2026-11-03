@@ -255,17 +255,26 @@
 
         <div id="catalog-grid" class="catalog-grid" aria-live="polite"></div>
 
-        <div class="catalog-more">
+        <nav class="catalog-pager" id="catalog-pager" aria-label="Страницы каталога" hidden>
           <button
-            class="btn btn--ghost"
             type="button"
-            id="catalog-toggle"
-            hidden
-            aria-expanded="false"
+            class="catalog-pager__arrow"
+            id="catalog-prev"
+            aria-label="Предыдущая страница"
           >
-            Ещё 15
+            ‹
           </button>
-        </div>
+          <div class="catalog-pager__pages" id="catalog-pages"></div>
+          <button
+            type="button"
+            class="catalog-pager__arrow"
+            id="catalog-next"
+            aria-label="Следующая страница"
+          >
+            ›
+          </button>
+          <p class="catalog-pager__meta" id="catalog-pager-meta"></p>
+        </nav>
       </section>
 
       <section class="section reviews" aria-labelledby="reviews-title">
