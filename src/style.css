@@ -580,6 +580,16 @@ p {
   gap: 1.15rem 0.85rem;
 }
 
+.catalog-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.75rem;
+}
+
+.catalog-more .btn {
+  min-width: 12rem;
+}
+
 .product__link {
   display: grid;
   gap: 0.7rem;

@@ -2,6 +2,7 @@ const year = document.querySelector('#year')
 if (year) year.textContent = String(new Date().getFullYear())
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+const CATALOG_PREVIEW = 8
 
 const formatPrice = (value) =>
   `${new Intl.NumberFormat('ru-RU').format(value)}\u00a0₽`
@@ -13,6 +14,8 @@ const normalize = (value) =>
     .trim()
 
 let allProducts = []
+let filteredProducts = []
+let catalogExpanded = false
 let revealObserver = null
 
 const createProductCard = (product) => {
@@ -52,27 +55,50 @@ const createProductCard = (product) => {
   return article
 }
 
-const paintCatalog = (products) => {
+const updateToggle = () => {
+  const toggle = document.querySelector('#catalog-toggle')
+  if (!toggle) return
+
+  const needsToggle = filteredProducts.length > CATALOG_PREVIEW
+  toggle.hidden = !needsToggle
+  toggle.setAttribute('aria-expanded', String(catalogExpanded))
+
+  if (!needsToggle) return
+
+  toggle.textContent = catalogExpanded
+    ? 'Свернуть'
+    : `Показать все · ${filteredProducts.length}`
+}
+
+const paintCatalog = () => {
   const grid = document.querySelector('#catalog-grid')
   const countEl = document.querySelector('#catalog-count')
   const emptyEl = document.querySelector('#catalog-empty')
   if (!grid) return
 
+  const visible =
+    catalogExpanded || filteredProducts.length <= CATALOG_PREVIEW
+      ? filteredProducts
+      : filteredProducts.slice(0, CATALOG_PREVIEW)
+
   if (countEl) {
-    countEl.textContent =
-      products.length === allProducts.length
+    if (filteredProducts.length === allProducts.length) {
+      countEl.textContent = catalogExpanded
         ? String(allProducts.length)
-        : `${products.length} из ${allProducts.length}`
+        : `${Math.min(CATALOG_PREVIEW, allProducts.length)} из ${allProducts.length}`
+    } else {
+      countEl.textContent = `${filteredProducts.length} из ${allProducts.length}`
+    }
   }
 
-  if (emptyEl) emptyEl.hidden = products.length > 0
+  if (emptyEl) emptyEl.hidden = filteredProducts.length > 0
 
-  grid.replaceChildren(...products.map(createProductCard))
+  grid.replaceChildren(...visible.map(createProductCard))
+  updateToggle()
 
   if (!reduceMotion && revealObserver) {
     grid.querySelectorAll('.product').forEach((el) => {
-      el.classList.add('reveal')
-      revealObserver.observe(el)
+      el.classList.add('reveal', 'is-visible')
     })
   }
 }
@@ -87,6 +113,14 @@ const filterProducts = (query) => {
   })
 }
 
+const applyFilter = (query, { resetExpand = false } = {}) => {
+  filteredProducts = filterProducts(query)
+  if (resetExpand) catalogExpanded = false
+  // While searching, show all matches so results aren't hidden
+  if (normalize(query)) catalogExpanded = true
+  paintCatalog()
+}
+
 const renderCatalog = async () => {
   const grid = document.querySelector('#catalog-grid')
   if (!grid) return
@@ -95,7 +129,9 @@ const renderCatalog = async () => {
     const res = await fetch('./products.json')
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     allProducts = await res.json()
-    paintCatalog(allProducts)
+    filteredProducts = allProducts
+    catalogExpanded = false
+    paintCatalog()
   } catch (error) {
     grid.innerHTML =
       '<p class="catalog-error">Не удалось загрузить каталог. Откройте <a href="https://vk.ru/market-77839484" target="_blank" rel="noopener noreferrer">магазин ВКонтакте</a>.</p>'
@@ -106,20 +142,25 @@ const renderCatalog = async () => {
 const setupCatalogSearch = () => {
   const form = document.querySelector('#catalog-search')
   const input = document.querySelector('#catalog-query')
+  const toggle = document.querySelector('#catalog-toggle')
   if (!form || !input) return
-
-  const runSearch = () => {
-    paintCatalog(filterProducts(input.value))
-  }
 
   form.addEventListener('submit', (event) => {
     event.preventDefault()
-    runSearch()
+    applyFilter(input.value, { resetExpand: true })
     input.focus()
   })
 
   input.addEventListener('input', () => {
-    runSearch()
+    applyFilter(input.value, { resetExpand: true })
+  })
+
+  toggle?.addEventListener('click', () => {
+    catalogExpanded = !catalogExpanded
+    paintCatalog()
+    if (!catalogExpanded) {
+      document.querySelector('#catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
   })
 
   document.querySelectorAll('[data-focus-search]').forEach((el) => {
